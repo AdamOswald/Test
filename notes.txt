@@ -1,0 +1,125 @@
+Securly is an evil privacy-invasive extension, while it is in fact legal and admins love to defend it for being CIPA compliant, stuff like this brings up an important moral debate; Kids don't sign the agreements or read them, their parents do so for them, since they are minors.
+
+Here's what I see about Securly at the moment.
+
+It logs user location without user consent (if sysadmin enabled geolocation):
+		// If geolocation is turned on, get user location if the IP has changed.
+		if (window.geolocation) {
+			getRemoteIPGeo();
+		}
+`getRemoteIPGeo` 
+This function is defined in utils.js
+---
+It makes several background requests to the following URL(s) (IPs provided as well):
+
+cdn1.securly.com | 13.226.214.58 | Hosted on Microsoft Cloudfront
+
+---
+
+Looks like it's capable of decoding translate.google.com stuff, so that's a no-go for bypassing:
+
+ if (info_url.length > 1000) 
+        {
+            info_url = info_url.substring(0, 1000);
+        }
+		b64Msg = getSocialPost(info, info_url);
+		
+		if(b64Msg === false) {
+			return;
+		}
+		var b64Url = window.btoa(info_url);
+
+		var lHostName;
+		if(info_url.indexOf("translate.google.com") != -1)
+		{
+			lHostName = extractTranslateHostname(info_url);
+		}
+		else
+		{
+			var parser = document.createElement("a");
+			parser.href = info_url;
+			lHostName = parser.hostname.toLowerCase();
+		}
+---
+
+They can see all requests and hosts to/from iframed pages, and appear to decode base64 used in some URLs:
+
+if( interceptUrl == 1 )
+            {
+                var b64Msg = "";
+                if (info_url.length > 1000) 
+                {
+                    info_url = info_url.substring(0, 1000);
+                }
+                var b64Url = window.btoa(info_url);
+
+                var parser = document.createElement("a");
+                parser.href = info_url;
+                var lHostName = parser.hostname.toLowerCase();
+
+                var lHostNameOrig = lHostName;
+                lHostName=normalizeHostname(lHostNameOrig);
+                var mainHost = '';
+                var isSubFrame = false;
+                // Get host of main frame that requested sub frame
+                if (info.type == 'sub_frame') {
+                    parser.href = info.initiator;
+                    mainHost = window.btoa(parser.hostname.toLowerCase());
+                    isSubFrame = true;
+                    window.isSubFrame = true;
+                } else {
+                    window.isSubFrame = false;
+                    isSubFrame = false;
+                }
+---
+
+Police.js as a whole appears to be entirely dedicated to spying on users of social media (without any notification of doing so), and collecting information about their posts, what they view, and using it to provide data to school administrators, as well as to touch up on additional censorship.
+
+	// intercept posting on FB, Twitter and G+
+	if (urlHost.indexOf("twitter.com") != -1 &&
+		( urlPath.indexOf(window.twitterMessageURI) != -1 || 
+		(info_url.indexOf(window.twitterPrefetchTimestamp) != -1) && info.tabId == -1) &&
+		info_type == "xmlhttprequest") {
+
+		intercept = 1;
+		return intercept;
+	}
+
+	AND THIS SNIPPET OF CODE:
+	// intercept web search, gmail and google drive
+		// schools may not allow students login to google apps with their own account
+		if (urlPath.indexOf("/search") != -1 ||
+			urlPath.indexOf("/#q") != -1 ||
+			urlHost.indexOf("translate.google.co") != -1) {
+			intercept = 1;
+			return intercept;
+		}
+
+		// gmail and google drive need the google restricted domain login
+		if (urlHost.indexOf("mail.google.co") != -1 && info_type == "main_frame") {
+			intercept = 1;
+			return intercept;
+		}
+ADDITIONAL CENSORSHIP:
+
+		// SUPASKS-79, schools ask to block game sites hosted on sites.google.com
+		if (urlHost.indexOf("sites.google.co") != -1 && info_type == "main_frame") {
+			intercept = 1;
+			return intercept;
+		}
+---
+
+Viewing the Privacy Policy, which schools do not provide with Chromebook agreements, as if they expect all parents to have internet access or any way to access it:
+
+"The Services track a wide range of data and information you may use to identify your students individually. Such information may include, but is not limited to, your students’ online activity, social media usernames, electronic communications, and general web browsing activity. Any information that may be used to identify, contact, or locate your students individually is referred to herein as your students’ “Personally Identifiable Information.” We only collect Personally Identifiable Information through the Services belonging to a child under 18 where that student’s school, district, and/or teacher has consented (via the terms described in a separate agreement) for that child to use the Services and disclose Personally Identifiable Information to us or where the parent or legal guardian of a child has signed the child up to use the Services. If we learn we have collected Personally Identifiable Information about a student under 18 without proper consent, we will delete that information as quickly as possible."
+
+This particular part is quite concerning, especially the following:
+
+"Such information may include, but is not limited to, your students’ online activity, social media usernames, electronic communications, and general web browsing activity"
+
+Since schools and parents do in fact act as proper consent for a minor, this is allowed by law.
+
+---
+
+In short, students should absolutely refrain from using a Chromebook with this piece of malware installed, attempt to use their own equipment, and try to not agree to any policies where this malware is involved.
+	(By GNU's definition, malware is defined as "Software whose functioning mistreats the user is called malware."); Securly is definitely intended to mistreat the user by constantly watching them, and forwarding their activities to schools and storing this information long term, when the user is unaware of the situation.)

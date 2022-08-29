@@ -1,0 +1,26 @@
+{
+"update_url": "https://clients2.google.com/service/update2/crx",
+
+  "name": "Securly for Chromebooks",
+  "short_name": "Securly",
+  "version": "2.97.29",
+  "description": "Secure and manage your 1:1 Chromebooks with Securly",
+  "permissions": ["webRequest", "webRequestBlocking", "identity", "*://*/","file://*", "cookies", "tabs", "browsingData", "identity.email", "geolocation", "idle"],
+  "background": {
+    "scripts": ["conf.js", "sajax.js", "user_cluster.js", "police.js", "utils.js", "pnphub.js", "social.js", "broker.js", "listeners.js", "main.js", "encrypt.js", "long.min.js"],
+    "persistent": true
+  },
+  "key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDAb9tHNQkaX2R/K5CjzGgei7aQXn4wRkJyL8ZRhje0xjgHRPrK0zPictv4i/G0pIUQjoOpPt7QcgenbwbnJ73rRcNtDP03y69cQt8mIrZssAYcyjxSPYOiOABbWLSFp61YRkzfLbnNg/3brOI5sAXigyvJO7ze7cJFH2S/dmsI3wIDAQAB",
+  "oauth2": {
+    "client_id": "979354546084.apps.googleusercontent.com",
+    "scopes": [
+      "email"
+    ]
+  },
+
+  "icons": { "16": "icon16.png",
+             "48": "icon48.png",
+            "128": "icon128.png" },
+
+  "manifest_version": 2
+}
