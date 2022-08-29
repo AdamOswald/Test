@@ -1,0 +1,231 @@
+// FID: "securly@liberty.k12.ga.us"
+// USER: "54860@liberty.k12.ga.us"
+// Variables provided by PHP
+var cluster = "useast2";    // Used to determine what DNS servers to access
+var api_endpoint = "useast2.v1api.securly.com";
+var fid = "securly@liberty.k12.ga.us";			  // Reserved for future use	
+var stateid = "tzkrwvnoqmdn";	  // This users state data
+var did = "inj-wkoxjrgn0lgs";			  // Used to track the device
+var logging = false; // Extra logging
+
+// Informational
+var user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6.1 Safari/605.1.15";
+var ua_browser = "Safari 15.6.1";
+var ua_os = "Mac OS X 10.15.6";
+var pac_mode = "filter";  // "filter" or "bypass" - Filtering browsers bypassing for everything else
+
+// Variables calculated by the pac
+// @todo This needs to be securly.com for production
+var proxy_server = "PROXY useast2-dp.securly.com:80; DIRECT";
+var blackhole = "PROXY 240.0.0.1:80";
+
+var internal_ip = 0;
+// The cache buster is incremented whenever smartpac detects a circumstance that would
+// require cache invalidation.
+var cb = 0;
+var brokered = true;
+var last_sync_timestamp = 0;
+var now = 0;
+var securlydns = false;
+var pause = false;
+function FindProxyForURL(url, host) {
+	now = new Date();
+	now = Math.floor(now.getTime() / 1000);
+
+	if (host[host.length-1] == ".") {
+		// Remove Trailing Dot
+		host = host.slice(0, -1);
+	}
+
+	// SmartPac local kill switch
+	var killswitch = dnsResolve("smartpac-shutdown.securly.com");
+	if (killswitch != "127.0.0.2" && killswitch != "204.110.220.2") {
+		Debug("SmartPac Killswitch active");
+		return "DIRECT";
+	}
+	
+	// Is this website interesting from a filter point of view for this customer?  Then proxy.
+	if ( url[4] == "s" ) {
+		protocol = "s";
+	} else {
+		protocol = "h";
+	}
+	var dns = dnsResolve("securlydns.securly.com");
+	if (dns == "127.0.0.1" || dns == "204.110.220.1") {
+		securlydns = true;
+	} else {
+		securlydns = false;
+	}
+
+	if (isInNet(host, "127.0.0.0", "255.0.0.0")) {
+		return "DIRECT";
+	}
+
+	// Check for API calls
+	CheckApi(url, host);
+
+	// Invalidate policy cache when our internal IP address changes
+	if (myIpAddress() != internal_ip) {
+		Debug("IP O:"+internal_ip+" N:"+myIpAddress()+" IP Address change");
+		internal_ip = myIpAddress();
+		cb++;
+		last_sync_timestamp = 0;
+	}
+
+	var id = transmitStateInformation(true);
+
+	// Do not use proxy to comminate with WWW (By convention)
+	if (dnsDomainIs(host, ".securly.com")) {
+		return "DIRECT";
+	}
+	
+	if (pause == true) {
+		return handlePause(host);
+	}
+
+	// @todo unblock IP addresses
+	// @todo write and implement a normalization function
+
+	var flags = 0;
+
+	if ( url[4] == "s" ) {
+		flags |= (1 << 0);
+	} 
+
+	if (securlydns) {
+		flags |= (1 << 1);
+	}
+
+	// Is this website interesting from a filter point of view for this customer?  Then proxy.
+	var action = dnsResolve(host+"."+flags+"."+id+"."+cb+".prx."+api_endpoint);
+	if ( action == "204.110.220.2") {			// Must Broker
+		transmitStateInformation(false);
+		return proxy_server;
+	} else if ( action == "204.110.220.4") {	// May Broker
+		if (now - last_sync_timestamp > 10*60) {
+			Debug("Taking optional brokering opportunity");
+			transmitStateInformation(false);
+			// Updating last_sync_timestamp must be done after transmitStateInformation to avoid creating a race condition. The dnsResolve function blocks
+			// the first call of FindProxyForURL so the JS engine lets the second one run for optimization. However, when this happens and we get to this 
+			// if statement, last_sync_timestamp is already updated and so the second call goes to the else and returns DIRECT before the first call can
+			// finish resolving.
+			last_sync_timestamp = now;
+			return proxy_server;
+		} else {
+			Debug("Skipping optional brokering opportunity ("+(now-last_sync_timestamp)+","+now+","+last_sync_timestamp+")");
+			return "DIRECT";
+		}
+	} else if ( action == "204.110.220.3" ) {	// Blackhole
+		return blackhole;
+	} else if ( action == "204.110.220.5" ) {	// engage pause
+		pause = true;
+		cb++;
+		return handlePause(host);
+	} else {								// Do not broker
+		return "DIRECT";
+	}
+}
+
+// When we're paused, this function is called to see if we're still paused
+function handlePause(host) {
+	var action = dnsResolve(host+"."+did+"."+cb+".pse."+api_endpoint);
+	if (action == "204.110.220.1") {
+		// Pause this site with squid
+		return proxy_server;
+	} else if (action == "204.110.220.2") {
+		// Pause this site with the blackhole
+		return blackhole;
+	} else if (action == "204.110.220.3") {
+		// Pause is over, go back online
+		pause = false;
+		cb++;
+		return "DIRECT";
+	} else {
+		// Let this site go
+		return "DIRECT";
+	}
+}
+
+
+// This makes sure the remote server always knows who we are, even if our remote state has expired
+// mode indicates if this call should activate when brokered is true or false
+// Mode == true is when we're operating in a normalish routinely brokered mode
+// Mode == false only transmits state the first time it happens
+// brokered gets set to true the first time we broker, and remains true
+// If we have brokered, we use the did for our id.  If we have not brokered, we use the stateid for our id
+// This function returns the id we should use
+function transmitStateInformation(mode) {
+	if (brokered == mode) {
+		dnsResolveWrapper(stateid+"."+did+".state."+api_endpoint);
+		dnsResolveWrapper(internal_ip+"."+did+"."+cb+".mip."+api_endpoint);
+		brokered = true;
+	}
+
+	if (brokered == true) {
+		return did;
+	} else {
+		return stateid;
+	}
+}
+
+// This is a wrapper for dns resolve because IE PACs seem to break when you call dnsResolve
+// while ignoring the return value.  This seems to work around the bug.
+function dnsResolveWrapper(dnsEndpoint) {
+	return dnsResolve(dnsEndpoint);
+}
+
+function CheckApi(url, host) {
+	var rpc_endpoint = "\\.pacrpc\\."+api_endpoint;
+	var found;
+	var re;
+	var token;
+	
+	re = new RegExp("^([^.]*)sync"+rpc_endpoint, 'i');
+	found = host.match(re);
+	if (found !== null) {
+		token = found[1];
+		Debug("Restore Token API Endpoint - Token: "+token);
+		cb++;
+		last_sync_timestamp = now;
+		var dnsapi = did+"."+token+".res."+api_endpoint;
+		dnsResolveWrapper(dnsapi);
+	}
+}
+
+function Debug(string) {
+	var debug = "none";
+
+	if (debug == "alert") {
+		alert("smart_pac: "+string);
+	} else if (debug == "dns") {
+		DebugDns(string);
+	}
+}
+
+function DebugDns(string) {
+	var id = makeid(5);
+	var hex = AsciiToHex(string).substring(0,62);
+	
+	var dnsapi = hex+"."+did+"."+id+".debug."+api_endpoint;
+	dnsResolveWrapper(dnsapi);
+}
+
+function makeid(size) {
+	var text = "";
+	var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+	for (var i = 0; i < size; i++) {
+		text += possible.charAt(Math.floor(Math.random() * possible.length));
+	}
+
+	return text;
+}
+
+function AsciiToHex(str) {
+        var arr1 = [];
+        for (var n = 0, l = str.length; n < l; n ++) {
+                var hex = Number(str.charCodeAt(n)).toString(16);
+                arr1.push(hex);
+        }
+        return arr1.join('');
+}
