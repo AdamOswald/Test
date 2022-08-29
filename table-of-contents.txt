@@ -1,7 +1,0 @@
-This text documents what each file does
-
-user_cluster.js - blocks signin on non school accounts and forces school accounts to be used
-police.js - censors the posts you put on social media for both your personal and school account very nasty stuff here
-social.js - parses the info for police.js
-sajax.js - sends blocking and non-blocking xml requests
-pnphub.js - need to look more into it but looks like some admin thing
