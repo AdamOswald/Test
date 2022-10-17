@@ -1,0 +1,8 @@
+- name: Archive using zip or tar
+  uses: NSCoder/archive-action@v1.0.0
+
+action "Archive" {
+  uses = "./.github/workflows/archive"
+  args = "zip -r deployment_artifact.zip ./build"
+}
+
