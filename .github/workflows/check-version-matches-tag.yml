@@ -1,0 +1,24 @@
+- name: Check bundle version matches git tag
+  uses: sparta-science/check-version-matches-tag@v1.0.3
+  
+  - uses: sparta-science/check-version-matches-tag@v1
+  with:
+    plist-path: MyApp/Info.plist
+    
+    name: 'Check bundle version matches git tag'
+description: 'To build release based on tag and verify version has been set in Info.plist'
+inputs:
+  plist-path:
+    description: 'path to Info.plist file containing CFBundleShortVersionString'
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Verify plist version
+      run: ${{ github.action_path }}/check-version-matches-tag.sh ${{ inputs.plist-path }}
+      shell: bash
+branding:
+  icon: copy
+  color: purple
+  
+  
