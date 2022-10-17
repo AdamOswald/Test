@@ -1,0 +1,46 @@
+- name: Easy Zip Files
+  uses: vimtor/action-zip@v1
+
+name: Zip Files
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  zip-files:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: vimtor/action-zip@v1
+        with:
+          files: dist/ manifest.json
+          dest: result.zip
+          
+          - uses: actions/upload-artifact@v1
+  with:
+    name: my-artifact
+    path: ${{ github.workspace }}/result.zip
+    
+    name: "Easy Zip Files"
+description: "Action for zipping files and folders easily"
+inputs:
+  files:
+    description: "Files or directories to zip"
+    required: true
+  dest:
+    description: "Name of output zip file"
+    required: false
+    default: "result.zip"
+  recursive:
+    description: "Whether to add subdirectories to simply zip all files to the root"
+    required: false
+    default: true
+branding:
+  icon: "package"
+  color: "red"
+runs:
+  using: "node12"
+  main: "dist/index.js"
+  
+  
