@@ -542,3 +542,38 @@
   }
 }
 
+{
+  "name": "leitmotif",
+  "version": "0.0.0",
+  "description": "Music notation built on MotiveJS",
+  "main": "index.js",
+  "scripts": {
+    "test": "grunt test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jshanley/leitmotif.git"
+  },
+  "keywords": [
+    "music",
+    "notation"
+  ],
+  "author": "John Shanley",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jshanley/leitmotif/issues"
+  },
+  "homepage": "https://github.com/jshanley/leitmotif",
+  "devDependencies": {
+    "grunt": "~1.5.3",
+    "grunt-contrib-nodeunit": "~0.3.2",
+    "grunt-smash": "^0.1.0",
+    "grunt-jsbeautifier": "^0.2.6",
+    "grunt-contrib-uglify": "^0.4.0"
+  },
+  "dependencies": {
+    "xm-el": "^0.1.1",
+    "motive": "^0.2.0"
+  }
+}
+
