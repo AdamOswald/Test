@@ -1,0 +1,19 @@
+- name: extract-7z-action
+  uses: DuckSoft/extract-7z-action@v1.0
+
+name: 'extract-7z-action'
+description: 'Extract 7z/zip/.. Archive using GitHub Actions'
+branding:
+  icon: archive
+  color: blue
+inputs:
+  pathSource:
+    description: 'archive path to extract'
+    required: true
+  pathTarget:
+    description: 'path to place the extract'
+    required: true
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
+  
