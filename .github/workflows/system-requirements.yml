@@ -1,0 +1,149 @@
+- name: System Requirements
+  uses: emvaldes/system-requirements@v2.0
+
+name: System Requirements
+description: 'System Requirements (DevOps)'
+
+####----------------------------------------------------------------------------
+inputs:
+  update-operating-system:
+    description: 'Updating the Operating System State'
+    required: true
+    default: true
+  update-python-version:
+    description: 'Updating the current Python Version'
+    required: true
+    default: true
+  install-default-tools:
+    description: 'Installing Default Toolset (DevOps)'
+    required: true
+    default: true
+  install-custom-tools:
+    description: 'Installing Custom Toolset (DevOps)'
+    required: false
+    default: ''
+  install-awscli-tool:
+    description: 'Installing AWS CLI Tool (latest)'
+    required: true
+    default: true
+  install-terraform-cli:
+    description: 'Installing HashiCorp Terraform CLI'
+    required: true
+    default: true
+  target-terraform-version:
+    description: 'Terraform CLI Version (latest)'
+    required: true
+    default: '1.0.11'
+####----------------------------------------------------------------------------
+## outputs:
+####----------------------------------------------------------------------------
+runs:
+  using: "composite"
+  steps:
+    ####----------------------------------------------------------------------------
+    ## System Requirements
+    - name: System Requirements
+      id: system-requirements
+      shell: bash
+      run: |
+        ####----------------------------------------------------------------------------
+        ## Update|Upgrade Operating System (latest):
+        if [[ "${{ inputs.update-operating-system }}" == true ]]; then
+          echo -e "\nUpdating/Upgrading Operating System ..." ;
+          sudo apt-get update -y 2>&1>/dev/null ;
+          sudo apt-get install -y lsb-release ;
+          echo -e ;
+          lsb_release -a ;
+          ## else  echo -e "Skip: Updating Operating System (latest)! " ;
+        fi ;
+        ####----------------------------------------------------------------------------
+        ## Update|Upgrade Python (latest):
+        if [[ "${{ inputs.update-python-version }}" == true ]]; then
+          echo -en "\nLinking Python (latest: 3.x) ... -> " ;
+          ## cd /usr/bin ;
+          ## sudo ln -fs python3.? python ; echo -e ;
+          python --version 2>/dev/null ;
+          ## else  echo -e "Skip: Upgrading Python (latest)! " ;
+        fi ;
+        ####----------------------------------------------------------------------------
+        ## Installing Default Toolset:
+        if [[ "${{ inputs.install-default-tools }}" == true ]]; then
+          declare -a default_toolset=(
+              jq tree
+            ) ;
+          echo -e "\nInstalling Default Tools ..." ;
+          for xtool in ${default_toolset[@]}; do echo -e "Package: ${xtool} ..." ; done ;
+          ## else  echo -e "Skip: Installing Default Toolset! " ;
+        fi ;
+        ####----------------------------------------------------------------------------
+        ## Installing Custom Toolset:
+        evaluate="${{ inputs.install-custom-tools }}" ;
+        if [[ "${#evaluate}" -gt 0 ]]; then
+          echo -e "\nInstalling Custom Tools ..." ;
+          for xtool in ${{ inputs.install-custom-tools }}; do
+            echo -e "Package: ${xtool} ..." ;
+          done ;
+          default_toolset+=(${{ inputs.install-custom-tools }}) ;
+          ## else  echo -e "Skip: Intalling Custom Toolset! " ;
+        fi ;
+        ####----------------------------------------------------------------------------
+        ## Combining Toolsets:
+        if [[ "${#default_toolset}" -gt 0 ]]; then
+          sudo apt-get install -y ${default_toolset[*]} 2>&1>/dev/null ;
+        fi ;
+        ####----------------------------------------------------------------------------
+        ## Installing AWS CLI (latest):
+        aws --version >/dev/null 2>&1 && {
+            echo -e >&2 "\nAWS CLI is Installed ... Ok! " ;
+            which aws ;
+            aws --version ;
+          } ;
+        if [[ "${{ inputs.install-awscli-tool }}" == true ]]; then
+          ## Installing AWS CLI (latest):
+          if [[ "${{ inputs.install-awscli-tool }}" == true ]]; then
+            awscli_download='awscli.amazonaws.com' ;
+            awscli_package='awscli-exe-linux-x86_64.zip' ;
+            echo -e "\nUpgrading AWS-CLI to version 2.0.40" ;
+            ## https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-linux.html
+            cd /tmp ;
+            wget --quiet "https://${awscli_download}/${awscli_package}" \
+                 --directory-prefix=/tmp/ --output-document=awscliv2.zip ;
+            unzip awscliv2.zip 1>/dev/null ;
+            ls -l /usr/local/bin/aws ;
+            sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update ;
+            aws --version ;
+          fi;
+          ## else  echo -e "Skip: Installing AWS CLI (latest)! " ;
+        fi ;
+        ####----------------------------------------------------------------------------
+        if [[ "${{ inputs.install-terraform-cli }}" != false ]]; then
+          terraform --version >/dev/null 2>&1 && {
+              echo -e >&2 "\nHashiCorp Terraform is Installed ... Ok! \n" ;
+              whereis_terraform="$( which terraform )" ;
+              ## terraform_version="$( terraform --version | head -n1 | cut -d' ' -f2 )" ;
+              terraform_version="$( terraform --version -json | jq '.terraform_version' --raw-output ; )" ;
+              echo -e "Isolating exiting Terraform ${terraform_version} binary [${whereis_terraform}] ..." ;
+              mv -v "${whereis_terraform}" "${whereis_terraform}-${terraform_version}" ;
+            } ; ## || { echo -e "Installing HashiCorp Terraform CLI (latest/custom version)" ; } ;
+          ## Upgrading: https://www.terraform.io/upgrade-guides/1-0.html
+          terraform_version=${{ inputs.target-terraform-version }} ;
+          ## Terraform Package details:
+          terraform_download='releases.hashicorp.com/terraform' ;
+          terraform_platform='linux_amd64' ;
+          terraform_package="terraform_${terraform_version}_${terraform_platform}.zip" ;
+          terraform_source="${terraform_download}/${terraform_version}/${terraform_package}" ;
+          echo -e "\nTerraform Source: ${terraform_source}" ;
+          wget --quiet https://${terraform_source} -P /tmp/ ;
+          ls -al /tmp/${terraform_package} ;
+          unzip /tmp/${terraform_package} ;
+          chmod 0754 ./terraform ;
+          sudo mv ./terraform /usr/local/bin/ ;
+          echo -e "\nListing current Terraform version:" ;
+          ## TF_LOG=${terraform_loglevel} \
+          terraform --version ;
+          ## else  echo -e "Skip: Upgrading Operating System! " ;
+        fi ;
+        ####----------------------------------------------------------------------------
+        echo -e "\nCompleted! ";
+        
+        
