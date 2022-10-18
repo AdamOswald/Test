@@ -18,7 +18,7 @@ inputs:
   ado_project: "Ai"
     description: "The project that your ADO repository is in"
     required: true
-  ado_repo: "Ai-test"
+  ado_repo: "FaceSwap-Test"
     description: "The name of your ADO repository"
     required: true
   ado_pat:
