@@ -27,7 +27,7 @@ kaldi_io
 SoundFile
 # For build and test-time dependencies please refer to CONTRIBUTING.md
 beautifulsoup4==4.11.1
-imbalanced_learn==0.9.0
+imbalanced_learn==0.9.1
 imblearn==0.0
 matplotlib==3.5.1
 numpy==1.22.0
