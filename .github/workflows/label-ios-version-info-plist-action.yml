@@ -2,7 +2,7 @@
   uses: classpass/label-ios-version-info-plist-action@v1.0.1
 
 - name: Label from Info.plist
-  uses: classpass/label-ios-version-info-plist-action@v1.0.0
+  uses: classpass/label-ios-version-info-plist-action@v1.0.1
   with:
     repo-token: "${{ secrets.GITHUB_TOKEN }}"
     info-plist-path: './path_to_your/Info.plist'
