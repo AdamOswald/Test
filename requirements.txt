@@ -10,7 +10,7 @@ psycopg2-binary==2.9.5
 python-dateutil
 python-dotenv==0.21.0
 python-telegram-bot==13.5
-  APScheduler==3.6.3
+  APScheduler==3.9.1.post1
     pytz==2021.1
     setuptools==56.2.0
     six==1.16.0
