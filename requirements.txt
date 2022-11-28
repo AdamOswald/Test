@@ -29,7 +29,7 @@ SoundFile
 beautifulsoup4==4.11.1
 imbalanced_learn==0.9.1
 imblearn==0.0
-matplotlib==3.5.1
+matplotlib==3.6.2
 numpy==1.23.5
 pandas==1.5.2
 requests==2.26.0
