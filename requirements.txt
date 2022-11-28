@@ -6,7 +6,7 @@ Django>=3.2.13,<4.0
 django-money==2.1.1
 liqpay-sdk-python3==1.0.3
 Pillow>=9.0.1,<10.0
-psycopg2-binary==2.8.6
+psycopg2-binary==2.9.5
 python-dateutil
 python-dotenv==0.17.1
 python-telegram-bot==13.5
