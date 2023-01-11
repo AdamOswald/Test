@@ -12,7 +12,7 @@ python-dotenv==0.21.0
 python-telegram-bot==13.15
   APScheduler==3.9.1.post1
     pytz==2022.6
-    setuptools==65.6.3
+    setuptools==65.7.0
     six==1.16.0
     tzlocal==4.2
       pytz==2022.6
